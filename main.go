@@ -12,17 +12,19 @@ import (
 	"mimodulo/com"
 )
 
-type Asientos = map[int32]com.Asiento
-type Clientes = map[int32]com.Cliente
-type Facturas = map[int32]com.Factura
+var dAsientos = make(map[int32]com.Asiento)
+var dClientes = make(map[int32]com.Cliente)
+var dFacturas = make(map[int32]com.Factura)
 
+/*
+*
 var dAsientos Asientos //Diccionario de asientos
 var dClientes Clientes //Diccionario de clientes
 var dFacturas Facturas //Diccionario de facturas
-
-var idAsiento int32 = 0 // id serial
-var idCliente int32 = 0 // id serial
-var idFactura int32 = 0 // id serial
+*/
+var numAsiento int32 = 0 // id serial
+var idCliente int32 = 0  // id serial
+var idFactura int32 = 0  // id serial
 
 /*
 * Agrega un nuevo elemento "cliente" al diccionario de Clientes->dClientes
@@ -54,12 +56,28 @@ func clientesData() {
 	agregarCliente(idCliente, "Thomas", "Ovares", "Molina")
 	idCliente++
 }
-func facturasData() {
-	//falta agregar facturas
-}
+
 func asientosData() {
-	//falta agregar clientes
+	agregarAsiento("VIP", "Palco", numAsiento, 1, 1)
+	numAsiento++
+	agregarAsiento("VIP", "Palco", numAsiento, 1, 2)
+	numAsiento++
+	agregarAsiento("Regular", "Sombra", numAsiento, 1, 1)
+	numAsiento++
+	agregarAsiento("Regular", "Sombra", numAsiento, 1, 2)
+	numAsiento++
+	agregarAsiento("Premiun", "Gramilla", numAsiento, 1, 1)
+	numAsiento++
+	agregarAsiento("Premiun", "Gramilla", numAsiento, 1, 2)
+	numAsiento++
 }
+
+func facturasData() {
+	agregarFactura(idFactura, dClientes[0], dAsientos[0], 40000)
+	agregarFactura(idFactura, dClientes[1], dAsientos[2], 30000)
+	agregarFactura(idFactura, dClientes[2], dAsientos[3], 20000)
+}
+
 func cargarDatos() {
 	clientesData()
 	facturasData()
