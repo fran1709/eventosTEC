@@ -1,8 +1,8 @@
 package com
 
 type Factura struct {
-	asiento   Asiento
-	cliente   Cliente
-	precio    int32
-	idFactura int32
+	IdFactura int32
+	Cliente   Cliente
+	Asiento   Asiento
+	Precio    int32
 }
