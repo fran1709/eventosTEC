@@ -74,17 +74,26 @@ func asientosData() {
 
 func facturasData() {
 	agregarFactura(idFactura, dClientes[0], dAsientos[0], 40000)
+	idFactura++
 	agregarFactura(idFactura, dClientes[1], dAsientos[2], 30000)
+	idFactura++
 	agregarFactura(idFactura, dClientes[2], dAsientos[3], 20000)
+	idFactura++
 }
 
 func cargarDatos() {
 	clientesData()
-	facturasData()
 	asientosData()
+	facturasData()
 }
 
 func main() {
 	cargarDatos()
 	fmt.Println("Eventos Luna")
+	fmt.Println("----Clientes----")
+	fmt.Println(dClientes)
+	fmt.Println("----Asientos----")
+	fmt.Println(dAsientos)
+	fmt.Println("----Facturas----")
+	fmt.Println(dFacturas)
 }
