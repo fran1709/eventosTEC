@@ -2,7 +2,7 @@ package main
 
 /**
 @author Francisco Ovares Rojas
-@author Samantha
+@author Samantha Acuña Montero
 @startDate 21/08/2022
 @endDate   --/09/2022
 */
