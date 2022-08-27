@@ -33,10 +33,10 @@ func buscarCliente(idC int32) bool {
 	var encontrado bool
 	for _, element := range dClientes { // Recorre el map por el valor de la key
 		if element.IdCliente == idC {
-			fmt.Println("Encontrado")
+			//fmt.Println("Encontrado")
 			encontrado = true
 		} else {
-			fmt.Println("No encontrado")
+			//fmt.Println("No encontrado")
 			encontrado = false
 		}
 	}
@@ -44,40 +44,85 @@ func buscarCliente(idC int32) bool {
 }
 
 /*
-* Agrega un nuevo elemento "cliente" al diccionario de Clientes->dClientes
- */
+Agrega un nuevo elemento "cliente" al diccionario de Clientes->dClientes
+*/
 func agregarCliente(pId int32, pNombre string, pApellido1 string, pApellido2 string) {
 	cliente := buscarCliente(pId)
 	if !cliente {
 		dClientes[pId] = com.Cliente{IdCliente: pId, Nombre: pNombre, Apellido1: pApellido1, Apellido2: pApellido2}
-		fmt.Print("Cliente agregado \n")
+		//fmt.Print("Cliente agregado \n")
 	} else {
-		fmt.Print("Cliente no agregado, porque ya existe \n")
+		//fmt.Print("Cliente no agregado, porque ya existe \n")
 	}
 }
 
 /*
-* Agrega un nuevo elemento "cliente" al diccionario de Factura->dFactura
- */
-func agregarFactura(pId int32, pCliente com.Cliente, pAsiento com.Asiento, pPrecio int32) {
-	dFacturas[pId] = com.Factura{IdFactura: pId, Cliente: pCliente, Asiento: pAsiento, Precio: pPrecio}
+Buscar factura
+*/
+func buscarFactura(idF int32) bool {
+	var encontrado bool
+	for _, element := range dFacturas { // Recorre el map por el valor de la key
+		if element.IdFactura == idF {
+			//fmt.Println("Encontrado")
+			encontrado = true
+		} else {
+			//fmt.Println("No encontrado")
+			encontrado = false
+		}
+	}
+	return encontrado
 }
 
 /*
-*
+Agrega un nuevo elemento "cliente" al diccionario de Factura->dFactura
+*/
+func agregarFactura(pId int32, pCliente com.Cliente, pAsiento com.Asiento, pPrecio int32) {
+	factura := buscarFactura(pId)
+	if !factura {
+		dFacturas[pId] = com.Factura{IdFactura: pId, Cliente: pCliente, Asiento: pAsiento, Precio: pPrecio}
+		//fmt.Print("Factura agregada \n")
+	} else {
+		//fmt.Print("Factura existente no agregado \n")
+	}
+}
+
+/*
+Buscar asiento
+*/
+func buscarAsiento(numeroA int32, fila int16, columna int16) bool {
+	var encontrado bool
+	for _, element := range dAsientos { // Recorre el map por el valor de la key
+		if (element.Numero == numeroA) && (element.Fila == fila) && (element.Columna == columna) {
+			//fmt.Println("Encontrado")
+			encontrado = true
+		} else {
+			//fmt.Println("No encontrado")
+			encontrado = false
+		}
+	}
+	return encontrado
+}
+
+/*
 Agrega un nuevo elemento "asiento" al diccionario de Asientos->dAsientos
 */
 func agregarAsiento(pCategoria string, pZonas string, pNumero int32, pFila int16, pColum int16) {
-	dAsientos[pNumero] = com.Asiento{Categoria: pCategoria, Zona: pZonas, Numero: pNumero, Fila: pFila, Columna: pColum}
+	asiento := buscarAsiento(pNumero, pFila, pColum)
+	if !asiento {
+		dAsientos[pNumero] = com.Asiento{Categoria: pCategoria, Zona: pZonas, Numero: pNumero, Fila: pFila, Columna: pColum}
+		//fmt.Print("Asiento agregado \n")
+	} else {
+		//fmt.Print("Asiento existente no agregado \n")
+	}
 }
 
 func clientesData() {
-	//agregarCliente(1, "Francisco", "Ovares", "Rojas")
-	//idCliente++
-	//agregarCliente(1, "Josué", "Ovares", "Rojas")
-	//idCliente++
-	//agregarCliente(idCliente, "Thomas", "Ovares", "Molina")
-	//idCliente++
+	agregarCliente(idCliente, "Francisco", "Ovares", "Rojas")
+	idCliente++
+	agregarCliente(idCliente, "Josué", "Ovares", "Rojas")
+	idCliente++
+	agregarCliente(idCliente, "Thomas", "Ovares", "Molina")
+	idCliente++
 }
 
 func asientosData() {
@@ -106,22 +151,17 @@ func facturasData() {
 
 func cargarDatos() {
 	clientesData()
-	//asientosData()
-	//facturasData()
+	asientosData()
+	facturasData()
 }
 
 func main() {
-	/*cargarDatos()
+	cargarDatos()
 	fmt.Println("Eventos Luna")
 	fmt.Println("----Clientes----")
 	fmt.Println(dClientes)
 	fmt.Println("----Asientos----")
 	fmt.Println(dAsientos)
 	fmt.Println("----Facturas----")
-	fmt.Println(dFacturas)*/
-	agregarCliente(idCliente, "Sam", "Acunna", "Montero")
-	idCliente++
-	agregarCliente(idCliente, "Sam", "Acunna", "Montero")
-	idCliente++
-	fmt.Println(dClientes)
+	fmt.Println(dFacturas)
 }
