@@ -1,1 +1,5 @@
 package busqueda
+
+func busqueda() {
+
+}
