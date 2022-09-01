@@ -109,10 +109,29 @@ Agrega un nuevo elemento "asiento" al diccionario de Asientos->dAsientos
 func agregarAsiento(pCategoria string, pZonas string, pNumero int32, pFila int16, pColum int16) {
 	asiento := buscarAsiento(pNumero, pFila, pColum)
 	if !asiento {
-		dAsientos[pNumero] = com.Asiento{Categoria: pCategoria, Zona: pZonas, Numero: pNumero, Fila: pFila, Columna: pColum}
+		dAsientos[pNumero] = com.Asiento{Categoria: pCategoria, Zona: pZonas, Numero: pNumero, Fila: pFila, Columna: pColum, Estado: 1}
 		//fmt.Print("Asiento agregado \n")
 	} else {
 		//fmt.Print("Asiento existente no agregado \n")
+	}
+}
+
+/*
+Estado del asiento:
+
+	1 - Disponible
+	0 - Reservado
+	-1 - Comprado
+*/
+func estadoAsiento() {
+	for _, element := range dAsientos {
+		if element.Estado == 1 {
+			fmt.Println("Disponible")
+		} else if element.Estado == 0 {
+			fmt.Println("Reservado")
+		} else {
+			fmt.Println("Comprado")
+		}
 	}
 }
 
@@ -123,6 +142,10 @@ func clientesData() {
 	idCliente++
 	agregarCliente(idCliente, "Thomas", "Ovares", "Molina")
 	idCliente++
+}
+
+func motorDeBusqueda() {
+
 }
 
 func asientosData() {
@@ -164,4 +187,5 @@ func main() {
 	fmt.Println(dAsientos)
 	fmt.Println("----Facturas----")
 	fmt.Println(dFacturas)
+	estadoAsiento()
 }

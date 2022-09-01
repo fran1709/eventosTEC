@@ -6,4 +6,5 @@ type Asiento struct {
 	Numero    int32
 	Fila      int16
 	Columna   int16
+	Estado    int16
 }
