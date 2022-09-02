@@ -8,23 +8,21 @@ package main
 */
 
 import (
-	"fmt"
 	"mimodulo/com"
 )
 
-var dAsientos = make(map[int32]com.Asiento)
 var dClientes = make(map[int32]com.Cliente)
 var dFacturas = make(map[int32]com.Factura)
+var dCategorias = make(map[string]com.Categoria)
 
-/*
-*
-var dAsientos Asientos //Diccionario de asientos
-var dClientes Clientes //Diccionario de clientes
-var dFacturas Facturas //Diccionario de facturas
+var idCliente int32 = 0 // id serial
+var idFactura int32 = 0 // id serial
+
+/**
+--------------------------------------------------------------------------------
+							CLIENTES FUNCTIONS
+--------------------------------------------------------------------------------
 */
-var numAsiento int32 = 0 // id serial
-var idCliente int32 = 0  // id serial
-var idFactura int32 = 0  // id serial
 
 /*
 Buscar cliente
@@ -56,6 +54,20 @@ func agregarCliente(pId int32, pNombre string, pApellido1 string, pApellido2 str
 	}
 }
 
+func clientesData() {
+	agregarCliente(idCliente, "Francisco", "Ovares", "Rojas")
+	idCliente++
+	agregarCliente(idCliente, "Josué", "Ovares", "Rojas")
+	idCliente++
+	agregarCliente(idCliente, "Thomas", "Ovares", "Molina")
+	idCliente++
+}
+
+/**
+--------------------------------------------------------------------------------
+							FACTURACION FUNCTIONS
+--------------------------------------------------------------------------------
+*/
 /*
 Buscar factura
 */
@@ -86,34 +98,54 @@ func agregarFactura(pId int32, pCliente com.Cliente, pAsiento com.Asiento, pPrec
 	}
 }
 
+func facturasData() {
+	/*
+		agregarFactura(idFactura, dClientes[0], dAsientos[0], 40000)
+		idFactura++
+		agregarFactura(idFactura, dClientes[1], dAsientos[2], 30000)
+		idFactura++
+		agregarFactura(idFactura, dClientes[2], dAsientos[3], 20000)
+		idFactura++*/
+}
+
+/**
+--------------------------------------------------------------------------------
+							ASIENTOS FUNCTIONS
+--------------------------------------------------------------------------------
+*/
 /*
 Buscar asiento
 */
 func buscarAsiento(numeroA int32, fila int16, columna int16) bool {
 	var encontrado bool
-	for _, element := range dAsientos { // Recorre el map por el valor de la key
-		if (element.Numero == numeroA) && (element.Fila == fila) && (element.Columna == columna) {
-			//fmt.Println("Encontrado")
-			encontrado = true
-		} else {
-			//fmt.Println("No encontrado")
-			encontrado = false
-		}
-	}
+	/*
+		for _, element := range dAsientos { // Recorre el map por el valor de la key
+			if (element.Numero == numeroA) && (element.Fila == fila) && (element.Columna == columna) {
+				//fmt.Println("Encontrado")
+				encontrado = true
+			} else {
+				//fmt.Println("No encontrado")
+				encontrado = false
+			}
+		}*/
 	return encontrado
 }
 
 /*
-Agrega un nuevo elemento "asiento" al diccionario de Asientos->dAsientos
+Crea una matriz de asientos según categoria y zona parametreadas con una tamaño constante.
 */
-func agregarAsiento(pCategoria string, pZonas string, pNumero int32, pFila int16, pColum int16) {
-	asiento := buscarAsiento(pNumero, pFila, pColum)
-	if !asiento {
-		dAsientos[pNumero] = com.Asiento{Categoria: pCategoria, Zona: pZonas, Numero: pNumero, Fila: pFila, Columna: pColum, Estado: 1}
-		//fmt.Print("Asiento agregado \n")
-	} else {
-		//fmt.Print("Asiento existente no agregado \n")
+func crearAsientos(pCat string, pZona string) [4][5]com.Asiento {
+	const filas = 4
+	const colums = 5
+	var asientos [filas][colums]com.Asiento
+	for i := 0; i < filas; i++ {
+		//fmt.Println("i->", i)
+		for j := 0; j < colums; j++ {
+			//fmt.Println("j->", j)
+			asientos[i][j] = com.Asiento{Categoria: pCat, Zona: pZona, Fila: int16(i), Columna: int16(j), Estado: 1}
+		}
 	}
+	return asientos
 }
 
 /*
@@ -124,68 +156,64 @@ Estado del asiento:
 	-1 - Comprado
 */
 func estadoAsiento() {
-	for _, element := range dAsientos {
-		if element.Estado == 1 {
-			fmt.Println("Disponible")
-		} else if element.Estado == 0 {
-			fmt.Println("Reservado")
-		} else {
-			fmt.Println("Comprado")
-		}
-	}
+	/*
+		for _, element := range dAsientos {
+			if element.Estado == 1 {
+				fmt.Println("Disponible")
+			} else if element.Estado == 0 {
+				fmt.Println("Reservado")
+			} else {
+				fmt.Println("Comprado")
+			}
+		}*/
 }
 
-func clientesData() {
-	agregarCliente(idCliente, "Francisco", "Ovares", "Rojas")
-	idCliente++
-	agregarCliente(idCliente, "Josué", "Ovares", "Rojas")
-	idCliente++
-	agregarCliente(idCliente, "Thomas", "Ovares", "Molina")
-	idCliente++
+/*
+*
+--------------------------------------------------------------------------------
+
+	CATEGORIAS FUNCTIONS
+
+--------------------------------------------------------------------------------
+*/
+func agregarCategoria(pCate string, pZonaA [4][5]com.Asiento, pZonaB [4][5]com.Asiento, pZonaC [4][5]com.Asiento) {
+	dCategorias[pCate] = com.Categoria{ZonaA: pZonaA, ZonaB: pZonaB, ZonaC: pZonaC}
 }
 
+func categoriaData() {
+	agregarCategoria("VIP", crearAsientos("VIP", "A"), crearAsientos("VIP", "B"), crearAsientos("VIP", "C"))
+	agregarCategoria("GRAMILLA", crearAsientos("GRAMILLA", "A"), crearAsientos("GRAMILLA", "B"), crearAsientos("GRAMILLA", "C"))
+	agregarCategoria("PALCO", crearAsientos("PALCO", "A"), crearAsientos("PALCO", "B"), crearAsientos("PALCO", "C"))
+	agregarCategoria("SOMBRA", crearAsientos("SOMBRA", "A"), crearAsientos("SOMBRA", "B"), crearAsientos("SOMBRA", "C"))
+}
+
+/*
+*
+--------------------------------------------------------------------------------
+
+	MAIN FUNCTIONS
+
+--------------------------------------------------------------------------------
+*/
 func motorDeBusqueda() {
 
 }
 
-func asientosData() {
-	agregarAsiento("VIP", "Palco", numAsiento, 1, 1)
-	numAsiento++
-	agregarAsiento("VIP", "Palco", numAsiento, 1, 2)
-	numAsiento++
-	agregarAsiento("Regular", "Sombra", numAsiento, 1, 1)
-	numAsiento++
-	agregarAsiento("Regular", "Sombra", numAsiento, 1, 2)
-	numAsiento++
-	agregarAsiento("Premiun", "Gramilla", numAsiento, 1, 1)
-	numAsiento++
-	agregarAsiento("Premiun", "Gramilla", numAsiento, 1, 2)
-	numAsiento++
-}
-
-func facturasData() {
-	agregarFactura(idFactura, dClientes[0], dAsientos[0], 40000)
-	idFactura++
-	agregarFactura(idFactura, dClientes[1], dAsientos[2], 30000)
-	idFactura++
-	agregarFactura(idFactura, dClientes[2], dAsientos[3], 20000)
-	idFactura++
-}
-
 func cargarDatos() {
 	clientesData()
-	asientosData()
 	facturasData()
+	categoriaData()
 }
 
 func main() {
 	cargarDatos()
-	fmt.Println("Eventos Luna")
+	/**fmt.Println("Eventos Luna")
 	fmt.Println("----Clientes----")
 	fmt.Println(dClientes)
-	fmt.Println("----Asientos----")
-	fmt.Println(dAsientos)
 	fmt.Println("----Facturas----")
 	fmt.Println(dFacturas)
-	estadoAsiento()
+	fmt.Println("----Categorias----")
+	fmt.Println(dCategorias)*/
+	// dCategorias["nombreCategoria"].zona[fila][#asiento]]
+	//fmt.Println(dCategorias["VIP"].ZonaA[0][3])
 }
