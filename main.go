@@ -8,6 +8,7 @@ package main
 */
 
 import (
+	"fmt"
 	"mimodulo/com"
 )
 
@@ -116,19 +117,56 @@ func facturasData() {
 /*
 Buscar asiento
 */
-func buscarAsiento(numeroA int32, fila int16, columna int16) bool {
+func buscarAsiento(Categoria string, Zona string, fila int16, columna int16) bool {
 	var encontrado bool
-	/*
-		for _, element := range dAsientos { // Recorre el map por el valor de la key
-			if (element.Numero == numeroA) && (element.Fila == fila) && (element.Columna == columna) {
-				//fmt.Println("Encontrado")
-				encontrado = true
-			} else {
-				//fmt.Println("No encontrado")
-				encontrado = false
-			}
-		}*/
+	if (dCategorias[Categoria].ZonaA[fila][columna].Categoria == Categoria) && (dCategorias[Categoria].ZonaA[fila][columna].Zona == Zona) { // Asegura la categoria y la zona del asiento
+		if (dCategorias[Categoria].ZonaA[fila][columna].Fila == fila) && (dCategorias[Categoria].ZonaA[fila][columna].Columna == columna) { // Asegura la fila y columna
+			fmt.Print("\nAsiento: ", dCategorias[Categoria].ZonaA[fila][columna].Fila, dCategorias[Categoria].ZonaA[fila][columna].Columna, " Zona: ", dCategorias[Categoria].ZonaA[fila][columna].Zona)
+			encontrado = true
+		} else {
+			fmt.Println("Asiento no encontrado")
+			encontrado = false
+		}
+	} else if (dCategorias[Categoria].ZonaB[fila][columna].Categoria == Categoria) && (dCategorias[Categoria].ZonaB[fila][columna].Zona == Zona) { // Asegura la categoria y la zona del asiento
+		if (dCategorias[Categoria].ZonaB[fila][columna].Fila == fila) && (dCategorias[Categoria].ZonaB[fila][columna].Columna == columna) { // Asegura la fila y columna
+			fmt.Print("\nAsiento: ", dCategorias[Categoria].ZonaB[fila][columna].Fila, dCategorias[Categoria].ZonaB[fila][columna].Columna, " Zona: ", dCategorias[Categoria].ZonaB[fila][columna].Zona)
+			encontrado = true
+		} else {
+			fmt.Println("Asiento no encontrado")
+			encontrado = false
+		}
+	} else if (dCategorias[Categoria].ZonaC[fila][columna].Categoria == Categoria) && (dCategorias[Categoria].ZonaC[fila][columna].Zona == Zona) { // Asegura la categoria y la zona del asiento
+		if (dCategorias[Categoria].ZonaC[fila][columna].Fila == fila) && (dCategorias[Categoria].ZonaC[fila][columna].Columna == columna) { // Asegura la fila y columna
+			fmt.Print("\nAsiento: ", dCategorias[Categoria].ZonaC[fila][columna].Fila, dCategorias[Categoria].ZonaC[fila][columna].Columna, " Zona: ", dCategorias[Categoria].ZonaC[fila][columna].Zona)
+			encontrado = true
+		} else {
+			fmt.Println("Asiento no encontrado")
+			encontrado = false
+		}
+	}
 	return encontrado
+}
+
+/*
+Disponibilidad del asiento:
+
+	1 - Disponible
+	0 - Reservado
+	-1 - Comprado
+*/
+func disponibilidad(Categoria string, Zona string, fila int16, columna int16) bool {
+	var disponibilidadAsiento bool
+	asiento := buscarAsiento(Categoria, Zona, fila, columna)
+	if asiento {
+		if dCategorias[Categoria].ZonaB[fila][columna].Estado == 1 {
+			fmt.Println("\nDisponible")
+			disponibilidadAsiento = true
+		} else {
+			fmt.Println("\nEl asiento se encuentra reservado o comprado")
+			disponibilidadAsiento = false
+		}
+	}
+	return disponibilidadAsiento
 }
 
 /*
@@ -139,33 +177,11 @@ func crearAsientos(pCat string, pZona string) [4][5]com.Asiento {
 	const colums = 5
 	var asientos [filas][colums]com.Asiento
 	for i := 0; i < filas; i++ {
-		//fmt.Println("i->", i)
 		for j := 0; j < colums; j++ {
-			//fmt.Println("j->", j)
 			asientos[i][j] = com.Asiento{Categoria: pCat, Zona: pZona, Fila: int16(i), Columna: int16(j), Estado: 1}
 		}
 	}
 	return asientos
-}
-
-/*
-Estado del asiento:
-
-	1 - Disponible
-	0 - Reservado
-	-1 - Comprado
-*/
-func estadoAsiento() {
-	/*
-		for _, element := range dAsientos {
-			if element.Estado == 1 {
-				fmt.Println("Disponible")
-			} else if element.Estado == 0 {
-				fmt.Println("Reservado")
-			} else {
-				fmt.Println("Comprado")
-			}
-		}*/
 }
 
 /*
@@ -207,7 +223,7 @@ func cargarDatos() {
 
 func main() {
 	cargarDatos()
-	/**fmt.Println("Eventos Luna")
+	/*fmt.Println("Eventos Luna")
 	fmt.Println("----Clientes----")
 	fmt.Println(dClientes)
 	fmt.Println("----Facturas----")
@@ -215,5 +231,6 @@ func main() {
 	fmt.Println("----Categorias----")
 	fmt.Println(dCategorias)*/
 	// dCategorias["nombreCategoria"].zona[fila][#asiento]]
-	//fmt.Println(dCategorias["VIP"].ZonaA[0][3])
+	fmt.Println(disponibilidad("VIP", "A", 0, 3))
+
 }
