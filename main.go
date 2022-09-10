@@ -10,6 +10,7 @@ package main
 import (
 	"fmt"
 	"mimodulo/com"
+	"strings"
 )
 
 var dClientes = make(map[int32]com.Cliente)
@@ -18,6 +19,8 @@ var dCategorias = make(map[string]com.Categoria)
 
 var idCliente int32 = 0 // id serial
 var idFactura int32 = 0 // id serial
+
+type ListaAsientos []com.Asiento
 
 /**
 --------------------------------------------------------------------------------
@@ -109,42 +112,88 @@ func facturasData() {
 		idFactura++*/
 }
 
-/**
---------------------------------------------------------------------------------
-							ASIENTOS FUNCTIONS
---------------------------------------------------------------------------------
-*/
 /*
-Buscar asiento
+*
+--------------------------------------------------------------------------------
+
+	ASIENTOS FUNCTIONS
+
+--------------------------------------------------------------------------------
 */
-func buscarAsiento(Categoria string, Zona string, fila int16, columna int16) bool {
-	var encontrado bool
-	if (dCategorias[Categoria].ZonaA[fila][columna].Categoria == Categoria) && (dCategorias[Categoria].ZonaA[fila][columna].Zona == Zona) { // Asegura la categoria y la zona del asiento
-		if (dCategorias[Categoria].ZonaA[fila][columna].Fila == fila) && (dCategorias[Categoria].ZonaA[fila][columna].Columna == columna) { // Asegura la fila y columna
-			fmt.Print("\nAsiento: ", dCategorias[Categoria].ZonaA[fila][columna].Fila, dCategorias[Categoria].ZonaA[fila][columna].Columna, " Zona: ", dCategorias[Categoria].ZonaA[fila][columna].Zona)
-			encontrado = true
-		} else {
-			fmt.Println("Asiento no encontrado")
-			encontrado = false
-		}
-	} else if (dCategorias[Categoria].ZonaB[fila][columna].Categoria == Categoria) && (dCategorias[Categoria].ZonaB[fila][columna].Zona == Zona) { // Asegura la categoria y la zona del asiento
-		if (dCategorias[Categoria].ZonaB[fila][columna].Fila == fila) && (dCategorias[Categoria].ZonaB[fila][columna].Columna == columna) { // Asegura la fila y columna
-			fmt.Print("\nAsiento: ", dCategorias[Categoria].ZonaB[fila][columna].Fila, dCategorias[Categoria].ZonaB[fila][columna].Columna, " Zona: ", dCategorias[Categoria].ZonaB[fila][columna].Zona)
-			encontrado = true
-		} else {
-			fmt.Println("Asiento no encontrado")
-			encontrado = false
-		}
-	} else if (dCategorias[Categoria].ZonaC[fila][columna].Categoria == Categoria) && (dCategorias[Categoria].ZonaC[fila][columna].Zona == Zona) { // Asegura la categoria y la zona del asiento
-		if (dCategorias[Categoria].ZonaC[fila][columna].Fila == fila) && (dCategorias[Categoria].ZonaC[fila][columna].Columna == columna) { // Asegura la fila y columna
-			fmt.Print("\nAsiento: ", dCategorias[Categoria].ZonaC[fila][columna].Fila, dCategorias[Categoria].ZonaC[fila][columna].Columna, " Zona: ", dCategorias[Categoria].ZonaC[fila][columna].Zona)
-			encontrado = true
-		} else {
-			fmt.Println("Asiento no encontrado")
-			encontrado = false
+func getSizeList(pList *[][]com.Asiento) int {
+	var cont = 0
+	for i := range *pList {
+		cont += len((*pList)[i])
+	}
+	//fmt.Println(cont)
+	return cont
+}
+
+/*
+*
+Mapea todos los asientos vip de una categoría y los devuelve en una sola lista de asientos.
+*/
+func mapAsientos(pList *[][]com.Asiento, f func(pAsiento com.Asiento) com.Asiento) *[]com.Asiento {
+	size := getSizeList(pList)
+	mapped := make([]com.Asiento, size)
+	for i := range *pList {
+		for _, e := range (*pList)[i] {
+			//fmt.Println(e)
+			size--
+			mapped[size] = f(e)
+
 		}
 	}
-	return encontrado
+	//fmt.Println("mapped\n", mapped)
+	return &mapped
+}
+
+/*
+Retorna los asientos solicitados, que se encuentren disponibles.
+*/
+func filterAsientos(pLista *[]com.Asiento, pCantidad int) ListaAsientos {
+	var mejoresOptions ListaAsientos
+	var conta = 0
+	for _, e := range *pLista {
+		if conta == pCantidad {
+			break
+		}
+		if e.Estado == 1 {
+			mejoresOptions = append(mejoresOptions, e)
+			conta++
+		}
+	}
+	return mejoresOptions
+}
+
+/*
+*
+Retorna la matriz de los asientos de una categoria & zona respectiva.
+*/
+func obtenerAsientos(pCategoria string, pZona string) *[][]com.Asiento {
+	switch {
+	case "a" == strings.ToLower(pZona):
+		return dCategorias[strings.ToUpper(pCategoria)].ZonaA
+	case "b" == strings.ToLower(pZona):
+		return dCategorias[strings.ToUpper(pCategoria)].ZonaB
+	case "c" == strings.ToLower(pZona):
+		return dCategorias[strings.ToUpper(pCategoria)].ZonaC
+	}
+	return &[][]com.Asiento{}
+}
+
+func mejoresOpciones(pCategoria string, pZona string, pCantidad int) {
+	var matrixAsientos = obtenerAsientos(pCategoria, pZona)
+	var asientos = mapAsientos(matrixAsientos, func(p com.Asiento) com.Asiento {
+		if p.Zona == strings.ToUpper(pZona) {
+			return p
+		} else {
+			return com.Asiento{}
+		}
+	})
+	asientosfiltrados := filterAsientos(asientos, pCantidad)
+	//fmt.Println("asientos mapeados:\n", asientos)
+	fmt.Println("asientos filtrados:\n", asientosfiltrados)
 }
 
 /*
@@ -154,34 +203,58 @@ Disponibilidad del asiento:
 	0 - Reservado
 	-1 - Comprado
 */
-func disponibilidad(Categoria string, Zona string, fila int16, columna int16) bool {
-	var disponibilidadAsiento bool
-	asiento := buscarAsiento(Categoria, Zona, fila, columna)
-	if asiento {
-		if dCategorias[Categoria].ZonaB[fila][columna].Estado == 1 {
-			fmt.Println("\nDisponible")
-			disponibilidadAsiento = true
-		} else {
-			fmt.Println("\nEl asiento se encuentra reservado o comprado")
-			disponibilidadAsiento = false
-		}
+
+/*
+Cambia la disponibilidad del asiento segun se requiera
+*/
+func cambiarDisponibilidad(pCate string, pZona string, pFila int, pAsiento int, pDispo int8) {
+	switch {
+	case "a" == strings.ToLower(pZona):
+		(*dCategorias[strings.ToUpper(pCate)].ZonaA)[pFila][pAsiento].Estado = pDispo
+	case "b" == strings.ToLower(pZona):
+		(*dCategorias[strings.ToUpper(pCate)].ZonaB)[pFila][pAsiento].Estado = pDispo
+	case "c" == strings.ToLower(pZona):
+		(*dCategorias[strings.ToUpper(pCate)].ZonaC)[pFila][pAsiento].Estado = pDispo
 	}
-	return disponibilidadAsiento
+}
+
+/*
+Retorna la diponibilidad del asiento
+*/
+func disponibilidadAsiento(pCate string, pZona string, pFila int, pAsiento int) int8 {
+	switch {
+	case "a" == strings.ToLower(pZona):
+		return (*dCategorias[strings.ToUpper(pCate)].ZonaA)[pFila][pAsiento].Estado
+	case "b" == strings.ToLower(pZona):
+		return (*dCategorias[strings.ToUpper(pCate)].ZonaB)[pFila][pAsiento].Estado
+	case "c" == strings.ToLower(pZona):
+		return (*dCategorias[strings.ToUpper(pCate)].ZonaC)[pFila][pAsiento].Estado
+	}
+	return -2
+}
+
+func comprarAsiento() {
+
 }
 
 /*
 Crea una matriz de asientos según categoria y zona parametreadas con una tamaño constante.
 */
-func crearAsientos(pCat string, pZona string) [4][5]com.Asiento {
-	const filas = 4
-	const colums = 5
-	var asientos [filas][colums]com.Asiento
-	for i := 0; i < filas; i++ {
-		for j := 0; j < colums; j++ {
+func crearAsientos(pCat string, pZona string, pFilas int, pAsientos int) *[][]com.Asiento {
+
+	var asientos = make([][]com.Asiento, pFilas)
+	//fmt.Println("salidos del horno\n", asientos)
+	for i := 0; i < pFilas; i++ {
+		asientos[i] = make([]com.Asiento, pAsientos)
+	}
+	//fmt.Println(asientos)
+	for i := 0; i < pFilas; i++ {
+		for j := 0; j < pAsientos; j++ {
 			asientos[i][j] = com.Asiento{Categoria: pCat, Zona: pZona, Fila: int16(i), Columna: int16(j), Estado: 1}
 		}
 	}
-	return asientos
+	//fmt.Println(asientos)
+	return &asientos
 }
 
 /*
@@ -192,15 +265,16 @@ func crearAsientos(pCat string, pZona string) [4][5]com.Asiento {
 
 --------------------------------------------------------------------------------
 */
-func agregarCategoria(pCate string, pZonaA [4][5]com.Asiento, pZonaB [4][5]com.Asiento, pZonaC [4][5]com.Asiento) {
+func agregarCategoria(pCate string, pZonaA *[][]com.Asiento, pZonaB *[][]com.Asiento, pZonaC *[][]com.Asiento) {
 	dCategorias[pCate] = com.Categoria{ZonaA: pZonaA, ZonaB: pZonaB, ZonaC: pZonaC}
 }
 
 func categoriaData() {
-	agregarCategoria("VIP", crearAsientos("VIP", "A"), crearAsientos("VIP", "B"), crearAsientos("VIP", "C"))
-	agregarCategoria("GRAMILLA", crearAsientos("GRAMILLA", "A"), crearAsientos("GRAMILLA", "B"), crearAsientos("GRAMILLA", "C"))
-	agregarCategoria("PALCO", crearAsientos("PALCO", "A"), crearAsientos("PALCO", "B"), crearAsientos("PALCO", "C"))
-	agregarCategoria("SOMBRA", crearAsientos("SOMBRA", "A"), crearAsientos("SOMBRA", "B"), crearAsientos("SOMBRA", "C"))
+	agregarCategoria("VIP", crearAsientos("VIP", "A", 2, 10), crearAsientos("VIP", "B", 4, 20), crearAsientos("VIP", "C", 5, 30))
+	agregarCategoria("GRAMILLA", crearAsientos("GRAMILLA", "A", 2, 10), crearAsientos("GRAMILLA", "B", 4, 20), crearAsientos("GRAMILLA", "C", 5, 30))
+	agregarCategoria("PALCO", crearAsientos("PALCO", "A", 2, 10), crearAsientos("PALCO", "B", 4, 20), crearAsientos("PALCO", "C", 5, 30))
+	agregarCategoria("SOMBRA", crearAsientos("SOMBRA", "A", 2, 10), crearAsientos("SOMBRA", "B", 4, 20), crearAsientos("SOMBRA", "C", 5, 30))
+
 }
 
 /*
@@ -228,9 +302,12 @@ func main() {
 	fmt.Println(dClientes)
 	fmt.Println("----Facturas----")
 	fmt.Println(dFacturas)
-	fmt.Println("----Categorias----")
-	fmt.Println(dCategorias)*/
+	fmt.Println("----Categorias----")*/
+	//fmt.Println(dCategorias)
 	// dCategorias["nombreCategoria"].zona[fila][#asiento]]
-	fmt.Println(disponibilidad("VIP", "A", 0, 3))
-
+	//fmt.Println(disponibilidad("VIP", "A", 0, 3))
+	mejoresOpciones("vip", "a", 4)
+	cambiarDisponibilidad("vip", "a", 1, 9, -1)
+	cambiarDisponibilidad("vip", "a", 1, 7, -1)
+	mejoresOpciones("vip", "a", 4)
 }
