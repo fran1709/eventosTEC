@@ -10,14 +10,21 @@ package main
 import (
 	"fmt"
 	"mimodulo/com"
+	"net"
+	"os"
 	"strings"
 )
 
-var dClientes = make(map[int32]com.Cliente)
+const (
+	SERVER_HOST = "127.0.0.1"
+	SERVER_PORT = "3000"
+	SERVER_TYPE = "tcp"
+)
+
+var dClientes = make(map[string]com.Cliente)
 var dFacturas = make(map[int32]com.Factura)
 var dCategorias = make(map[string]com.Categoria)
 
-var idCliente int32 = 0 // id serial
 var idFactura int32 = 0 // id serial
 
 type ListaAsientos []com.Asiento
@@ -30,28 +37,30 @@ type ListaAsientos []com.Asiento
 
 /*
 Buscar cliente
+return true El cliente existe en sistema
+return false El cliente no existe en sistema.
 */
-func buscarCliente(idC int32) bool {
-	var encontrado bool
-	for _, element := range dClientes { // Recorre el map por el valor de la key
-		if element.IdCliente == idC {
-			//fmt.Println("Encontrado")
-			encontrado = true
-		} else {
-			//fmt.Println("No encontrado")
-			encontrado = false
-		}
+func isCliente(pCedula string) bool {
+	if _, isFound := dClientes[pCedula]; isFound {
+		//fmt.Println("El cliente ", el, ", existe en sistema: ", isFound)
+		return isFound
 	}
-	return encontrado
+	return false
+}
+
+func datosCliente(pCedula string) string {
+	cadena := ""
+
+	return cadena
 }
 
 /*
 Agrega un nuevo elemento "cliente" al diccionario de Clientes->dClientes
 */
-func agregarCliente(pId int32, pNombre string, pApellido1 string, pApellido2 string) {
-	cliente := buscarCliente(pId)
+func agregarCliente(pCedula string, pNombreCompleto string, pCorreo string) {
+	cliente := isCliente(pCedula)
 	if !cliente {
-		dClientes[pId] = com.Cliente{IdCliente: pId, Nombre: pNombre, Apellido1: pApellido1, Apellido2: pApellido2}
+		dClientes[pCedula] = com.Cliente{Cedula: pCedula, NombreCompleto: pNombreCompleto, Correo: pCorreo}
 		//fmt.Print("Cliente agregado \n")
 	} else {
 		//fmt.Print("Cliente no agregado, porque ya existe \n")
@@ -59,12 +68,10 @@ func agregarCliente(pId int32, pNombre string, pApellido1 string, pApellido2 str
 }
 
 func clientesData() {
-	agregarCliente(idCliente, "Francisco", "Ovares", "Rojas")
-	idCliente++
-	agregarCliente(idCliente, "Josué", "Ovares", "Rojas")
-	idCliente++
-	agregarCliente(idCliente, "Thomas", "Ovares", "Molina")
-	idCliente++
+	agregarCliente("207710202", "Francisco Ovares Rojas", "fran1709@estudiantec.cr")
+	agregarCliente("207710203", "Josue Ovares Rojas", "josue1908@estudiantec.cr")
+	agregarCliente("207710205", "Thomas Ovares Molina", "thom1105@estudiantec.cr")
+	agregarCliente("207710205", "Thomas Ovares Molina", "thom1105@estudiantec.cr")
 }
 
 /**
@@ -74,32 +81,31 @@ func clientesData() {
 */
 /*
 Buscar factura
+return true La factura existe en sistema
+return false La factura no existe en sistema.
 */
-func buscarFactura(idF int32) bool {
-	var encontrado bool
-	for _, element := range dFacturas { // Recorre el map por el valor de la key
-		if element.IdFactura == idF {
-			//fmt.Println("Encontrado")
-			encontrado = true
-		} else {
-			//fmt.Println("No encontrado")
-			encontrado = false
-		}
+func isFactura(pId int32) bool {
+	if _, isFound := dFacturas[pId]; isFound {
+		return isFound
 	}
-	return encontrado
+	return false
 }
 
 /*
 Agrega un nuevo elemento "cliente" al diccionario de Factura->dFactura
 */
 func agregarFactura(pId int32, pCliente com.Cliente, pAsiento com.Asiento, pPrecio int32) {
-	factura := buscarFactura(pId)
+	factura := isFactura(pId)
 	if !factura {
 		dFacturas[pId] = com.Factura{IdFactura: pId, Cliente: pCliente, Asiento: pAsiento, Precio: pPrecio}
 		//fmt.Print("Factura agregada \n")
 	} else {
 		//fmt.Print("Factura existente no agregado \n")
 	}
+}
+
+func comprarAsiento() {
+
 }
 
 func facturasData() {
@@ -233,10 +239,6 @@ func disponibilidadAsiento(pCate string, pZona string, pFila int, pAsiento int) 
 	return -2
 }
 
-func comprarAsiento() {
-
-}
-
 /*
 Crea una matriz de asientos según categoria y zona parametreadas con una tamaño constante.
 */
@@ -285,29 +287,138 @@ func categoriaData() {
 
 --------------------------------------------------------------------------------
 */
-func motorDeBusqueda() {
-
-}
-
 func cargarDatos() {
 	clientesData()
 	facturasData()
 	categoriaData()
 }
 
-func main() {
-	cargarDatos()
-	/*fmt.Println("Eventos Luna")
-	fmt.Println("----Clientes----")
-	fmt.Println(dClientes)
-	fmt.Println("----Facturas----")
-	fmt.Println(dFacturas)
-	fmt.Println("----Categorias----")*/
+func mostrarClientes() string {
+	fmt.Println("Solicitando al servidor datos...")
+	var answer string = ""
+	answer += "----Clientes----\n"
+	for _, client := range dClientes {
+		answer += client.NombreCompleto
+		answer += "\n"
+	}
+	return answer
+}
+
+func mostrarFacturas() string {
+	var cadena = ""
+	/*fmt.Println("----Facturas----")
+	fmt.Println(dFacturas)*/
+	return cadena
+}
+
+func monstrarCategorias() string {
+	var cadena = ""
+	fmt.Println("----Categorias----")
 	//fmt.Println(dCategorias)
 	// dCategorias["nombreCategoria"].zona[fila][#asiento]]
+	return cadena
+}
+
+func mostrarInfoPrincipal() string {
+	var cadena = ""
+	cadena += "\n-----Eventos Luna-----\n"
+	cadena += "1. Comprar Asientos.\n"
+	cadena += "2. Buscar Factura.\n"
+	cadena += "3. Buscar Cliente.\n"
+	cadena += "4. Registrarse\n"
+	cadena += "5. Salir.\n"
+	cadena += "6. Clientes.\n"
+	cadena += "7. Facturas.\n"
 	//fmt.Println(disponibilidad("VIP", "A", 0, 3))
-	mejoresOpciones("vip", "a", 4)
-	cambiarDisponibilidad("vip", "a", 1, 9, -1)
-	cambiarDisponibilidad("vip", "a", 1, 7, -1)
-	mejoresOpciones("vip", "a", 4)
+	//mejoresOpciones("vip", "a", 4)
+	//cambiarDisponibilidad("vip", "a", 1, 9, -1)
+	//cambiarDisponibilidad("vip", "a", 1, 7, -1)
+	//mejoresOpciones("vip", "a", 4)
+	return cadena
+}
+
+func taskFlow(pConnection net.Conn, pTask string) string {
+	var cadena = "\n-----Answer-----\n"
+	buffer := make([]byte, 1024)
+	switch {
+	case pTask == "1": // compra de asientos
+	case pTask == "2": // buscar factura
+	case pTask == "3": // buscar cliente
+
+	case pTask == "4": // registrarse
+		pConnection.Write([]byte("Cedula:"))
+		read, err := pConnection.Read(buffer)
+		var cedula string = string(buffer[:read])
+		fmt.Println("cedula:", cedula)
+		if err != nil {
+			fmt.Println("Error reading:", err.Error())
+		}
+
+		pConnection.Write([]byte("Nombre:"))
+		read2, err := pConnection.Read(buffer)
+		var nombre string = string(buffer[:read2])
+		fmt.Println("name:", nombre)
+
+		pConnection.Write([]byte("Email:"))
+		read3, err := pConnection.Read(buffer)
+		var email string = string(buffer[:read3])
+		fmt.Println("email:", email)
+
+		agregarCliente(cedula, nombre, email)
+
+		cadena += "Succesfull registration!\n"
+	case pTask == "6":
+		pConnection.Write([]byte(mostrarClientes()))
+	}
+
+	return cadena
+}
+
+func processClient(connection net.Conn) {
+	buffer := make([]byte, 1024)
+	for {
+		connection.Write([]byte(mostrarInfoPrincipal()))
+		mLen, err := connection.Read(buffer)
+		if err != nil {
+			fmt.Println("Error reading:", err.Error())
+			return
+		}
+		fmt.Println("Received: ", string(buffer[:mLen]))
+		if string(buffer[:mLen]) == ":q" {
+			_, err = connection.Write([]byte("Thanks for buying with us! See you Later!"))
+			fmt.Println("Client Desconnected")
+			return
+		}
+		if string(buffer[:mLen]) != "" {
+			answer := taskFlow(connection, string(buffer[:mLen]))
+			_, err = connection.Write([]byte(answer))
+		}
+
+	}
+}
+
+func runServer() {
+	fmt.Println("Server Running...")
+	server, err := net.Listen(SERVER_TYPE, SERVER_HOST+":"+SERVER_PORT)
+	if err != nil {
+		fmt.Println("Error listening:", err.Error())
+		os.Exit(1)
+	}
+	defer server.Close()
+	fmt.Println("Listening on " + SERVER_HOST + ":" + SERVER_PORT)
+	fmt.Println("Waiting for client...")
+	for {
+		connection, err := server.Accept()
+		if err != nil {
+			fmt.Println("Error accepting: ", err.Error())
+			os.Exit(1)
+		}
+		fmt.Println("Client connected")
+		go processClient(connection)
+	}
+}
+
+func main() {
+	cargarDatos()
+	runServer()
 }

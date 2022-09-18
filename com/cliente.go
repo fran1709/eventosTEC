@@ -1,8 +1,7 @@
 package com
 
 type Cliente struct {
-	IdCliente int32
-	Nombre    string
-	Apellido1 string
-	Apellido2 string
+	NombreCompleto string
+	Correo         string
+	Cedula         string
 }
