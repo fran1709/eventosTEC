@@ -13,10 +13,10 @@ main = runTCPClient "127.0.0.1" "3000" $ \s -> do
 loop socket = do
     msg1 <- recv socket 1024
     C.putStrLn msg1
-    putStrLn "Msg to server:"
+    putStrLn "Mensaje respuesta al servidor:"
     toSend <- getLine
     sendAll socket (C.pack toSend)
-    if C.pack toSend == C.pack "5" then putStrLn "Disconnected!" else loop socket
+    if C.pack toSend == C.pack ":q" then putStrLn "Disconnected!" else loop socket
 
 -- from the "network-run" package.
 runTCPClient :: HostName -> ServiceName -> (Socket -> IO a) -> IO a
