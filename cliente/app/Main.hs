@@ -11,7 +11,7 @@ main = runTCPClient "127.0.0.1" "3000" $ \s -> do
     loop s
 
 loop socket = do
-    msg1 <- recv socket 1024
+    msg1 <- recv socket 15000
     C.putStrLn msg1
     putStrLn "Mensaje respuesta al servidor:"
     toSend <- getLine

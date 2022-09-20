@@ -49,10 +49,9 @@ func isCliente(pCedula string) bool {
 	return false
 }
 
-func datosCliente(pCedula string) string {
-	cadena := ""
-
-	return cadena
+func datosCliente(pCedula string) *com.Cliente {
+	var cliente = dClientes[pCedula]
+	return &cliente
 }
 
 /*
@@ -62,9 +61,9 @@ func agregarCliente(pCedula string, pNombreCompleto string, pCorreo string) {
 	cliente := isCliente(pCedula)
 	if !cliente {
 		dClientes[pCedula] = com.Cliente{Cedula: pCedula, NombreCompleto: pNombreCompleto, Correo: pCorreo}
-		//fmt.Print("Cliente agregado \n")
+		fmt.Print("Cliente agregado \n")
 	} else {
-		//fmt.Print("Cliente no agregado, porque ya existe \n")
+		fmt.Print("Cliente no agregado, porque ya existe \n")
 	}
 }
 
@@ -95,7 +94,7 @@ func isFactura(pId int32) bool {
 /*
 Agrega un nuevo elemento "cliente" al diccionario de Factura->dFactura
 */
-func agregarFactura(pId int32, pCliente com.Cliente, pAsiento com.Asiento, pPrecio int32) {
+func agregarFactura(pId int32, pCliente *com.Cliente, pAsiento *com.Asiento, pPrecio int32) {
 	factura := isFactura(pId)
 	if !factura {
 		dFacturas[pId] = com.Factura{IdFactura: pId, Cliente: pCliente, Asiento: pAsiento, Precio: pPrecio}
@@ -105,6 +104,16 @@ func agregarFactura(pId int32, pCliente com.Cliente, pAsiento com.Asiento, pPrec
 	}
 }
 
+func comprarSugerencias(pListaAsientos ListaAsientos, pCedula string) {
+	for _, asiento := range pListaAsientos {
+		cambiarDisponibilidad(asiento.Categoria, asiento.Zona, int(asiento.Fila), int(asiento.Columna), -1)
+		//facturar a nombre del cliente
+		agregarFactura(idFactura, datosCliente(pCedula), &asiento, 1000)
+	}
+
+	idFactura++
+}
+
 func comprarAsiento(pConnection net.Conn, pCategory string, pZona string, pCantidad int) {
 	fmt.Println("Comprando tickets...")
 	buffer := make([]byte, 1024)
@@ -112,13 +121,32 @@ func comprarAsiento(pConnection net.Conn, pCategory string, pZona string, pCanti
 	pConnection.Write([]byte("\n1.Sugerencias.\n2.Listado Disponible.\n"))
 	read, _ := pConnection.Read(buffer)
 	var choice = string(buffer[:read])
+	fmt.Println("Recibe: " + choice)
+	asientos, pLista := mejoresOpciones(pCategory, pZona, pCantidad)
 	switch choice {
 	case "1":
-		pConnection.Write([]byte(mejoresOpciones(pCategory, pZona, pCantidad)))
+		pConnection.Write([]byte(asientos))
+		pConnection.Write([]byte("\n1. Comprar Sugerencias.\n2. Salir."))
+		read1, _ := pConnection.Read(buffer)
+		var choice1 = string(buffer[:read1])
+		fmt.Println("Recibe: " + choice1)
+		switch choice1 {
+		case "1":
+			pConnection.Write([]byte("\nIngrese su cedula cliente:"))
+			read2, _ := pConnection.Read(buffer)
+			var cedula = string(buffer[:read2])
+			//FALTA SOLICITAR CLIENTE & FACTURAR A NOMBRE DEL CLIENTE
+			if isCliente(cedula) {
+				comprarSugerencias(pLista, cedula)
+			} else {
+				pConnection.Write([]byte("\nNo existe un cliente asociado a la cedula -> " + cedula))
+			}
+		case "2":
+			return
+		}
 	case "2":
 		pConnection.Write([]byte(mostrarAsientos(pCategory, pZona)))
 	}
-	return
 }
 
 func facturasData() {
@@ -201,7 +229,7 @@ func obtenerAsientos(pCategoria string, pZona string) *[][]com.Asiento {
 	return &[][]com.Asiento{}
 }
 
-func mejoresOpciones(pCategoria string, pZona string, pCantidad int) string {
+func mejoresOpciones(pCategoria string, pZona string, pCantidad int) (string, ListaAsientos) {
 	var cadena = ""
 	var zona = ""
 	switch pZona {
@@ -223,13 +251,12 @@ func mejoresOpciones(pCategoria string, pZona string, pCantidad int) string {
 	asientosfiltrados := filterAsientos(asientos, pCantidad)
 	//fmt.Println("asientos mapeados:\n", asientos)
 	//fmt.Println("asientos filtrados:\n", asientosfiltrados)
-	for fila, asiento := range asientosfiltrados {
-		cadena += "\nCategoria: " + strings.ToUpper(pCategoria) + ", Zona: " + strings.ToUpper(zona) + ", Fila: " + strconv.Itoa(fila) + ", Asiento: " + strconv.Itoa(int(asiento.Columna))
+	for _, asiento := range asientosfiltrados {
+		cadena += "-" + strings.ToUpper(pCategoria) + "-" + strings.ToUpper(zona) + "-" + strconv.Itoa(int(asiento.Fila)) + "-" + strconv.Itoa(int(asiento.Columna)) + "-"
 	}
 	fmt.Println("Mejores Opciones enviando...\n", cadena)
-	fmt.Println(asientos)
-	cadena += "\n"
-	return cadena
+	//fmt.Println(asientos)
+	return cadena, asientosfiltrados
 }
 
 /*
@@ -383,11 +410,12 @@ func mostrarAsientos(pCategoria string, pZona string) string {
 		}
 	})
 	asientosfiltrados := filterAsientos(asientos, -1)
-	for fila, asiento := range asientosfiltrados {
-		cadena += "\nCategoria: " + strings.ToUpper(pCategoria) + ", Zona: " + strings.ToUpper(zona) + ", Fila: " + strconv.Itoa(fila) + ", Asiento: " + strconv.Itoa(int(asiento.Columna))
+	for _, asiento := range asientosfiltrados {
+		cadena += "\nCategoria: " + strings.ToUpper(pCategoria) + ", Zona: " + strings.ToUpper(zona) + ", Fila: " + strconv.Itoa(int(asiento.Fila)) + ", Asiento: " + strconv.Itoa(int(asiento.Columna))
 	}
 	cadena += "\n"
-	fmt.Println(asientos)
+	fmt.Println("Enviando listado disponible total...")
+	//fmt.Println(asientos)
 	return cadena
 }
 
@@ -401,11 +429,6 @@ func mostrarInfoPrincipal() string {
 	cadena += "5. Salir.\n"
 	cadena += "6. Clientes.\n"
 	cadena += "7. Facturas.\n"
-	//fmt.Println(disponibilidad("VIP", "A", 0, 3))
-	//mejoresOpciones("vip", "a", 4)
-	//cambiarDisponibilidad("vip", "a", 1, 9, -1)
-	//cambiarDisponibilidad("vip", "a", 1, 7, -1)
-	//mejoresOpciones("vip", "a", 4)
 	return cadena
 }
 
@@ -443,18 +466,24 @@ func buyTask(pConnection net.Conn) {
 	pConnection.Write([]byte(monstrarCategorias() + "\nQue categoria desea comprar?\n"))
 	read, _ := pConnection.Read(buffer)
 	var category = string(buffer[:read])
+	fmt.Println("Recibe: " + category)
 
 	pConnection.Write([]byte(mostrarZonas() + "\nQue zona desea comprar?\n"))
 	read1, _ := pConnection.Read(buffer)
 	var zona = string(buffer[:read1])
+	fmt.Println("Recibe: " + zona)
 
 	pConnection.Write([]byte("\nCuantos tickets desea comprar?\n"))
 	read2, _ := pConnection.Read(buffer)
 	var cantidad = string(buffer[:read2])
 	cant, _ := strconv.Atoi(cantidad)
+	fmt.Println("Recibe: " + cantidad)
 
 	if strings.ToUpper(category) != "VIP" && strings.ToUpper(category) != "PALCO" &&
 		strings.ToUpper(category) != "SOMBRA" && strings.ToUpper(category) != "GRAMILLA" {
+		return
+	}
+	if zona != "1" && zona != "2" && zona != "3" {
 		return
 	}
 
@@ -555,8 +584,17 @@ func runServer() {
 }
 
 func main() {
+	//fmt.Println(disponibilidad("VIP", "A", 0, 3))
+	//mejoresOpciones("vip", "a", 4)
+	//cambiarDisponibilidad("vip", "a", 1, 9, -1)
+	//cambiarDisponibilidad("vip", "a", 1, 7, -1)
+	//mejoresOpciones("vip", "a", 4)
 	cargarDatos()
 	//mejoresOpciones("vip", "3", 3)
 	//mostrarAsientos("vip", "3")
+	//_, lista := mejoresOpciones("vip", "3", 2)
+	//comprarSugerencias(lista)
+	//mejoresOpciones("vip", "3", 2)
+	//mejoresOpciones("vip", "3", 2)
 	runServer()
 }
