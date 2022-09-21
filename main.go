@@ -110,16 +110,35 @@ Además crea y agrega la factura en el sistema con los datos del cliente(debe es
 */
 func comprarSugerencias(pListaAsientos ListaAsientos, pCedula string) {
 	for _, asiento := range pListaAsientos {
+		fmt.Println(asiento)
 		cambiarDisponibilidad(asiento.Categoria, asiento.Zona, int(asiento.Fila), int(asiento.Columna), -1)
 		//facturar a nombre del cliente
-		agregarFactura(idFactura, datosCliente(pCedula), &asiento, int32(asiento.Costo))
+		agregarFactura(idFactura, datosCliente(pCedula), datosAsiento(asiento.Categoria, asiento.Zona, int(asiento.Fila), int(asiento.Columna)), int32(asiento.Costo))
 		idFactura++
+		fmt.Println(obtenerAsientos(asiento.Categoria, asiento.Zona))
+	}
+
+}
+
+/*
+*
+Busca y cambia la disponibilidad de un asiento especifico seleccionado por el cliente y lo factura a su nombre.
+Depende de la disponibilidad del asiento.
+*/
+func comprarAsientoEspecifico(pCategory string, pZona string, pFila int, pColum int, pCedula string) {
+	if disponibilidadAsiento(pCategory, pZona, pFila, pColum) == 1 || disponibilidadAsiento(pCategory, pZona, pFila, pColum) == 0 {
+		agregarFactura(idFactura, datosCliente(pCedula), datosAsiento(pCategory, pZona, pFila, pColum), int32(datosAsiento(pCategory, pZona, pFila, pColum).Costo))
+		cambiarDisponibilidad(pCategory, pZona, pFila, pColum, -1)
+		idFactura++
+		fmt.Println("Asiento disponible. Asiento comprado.")
+	} else {
+		fmt.Println("Asiento no disponible. Asiento no comprado")
 	}
 }
 
 /*
 *
-Funcion encargada de la compra de asientos
+Funcion encargada de cencontrar el asiento, cambiar su disponibilidad si el cliente desea comprarlo.
 */
 func comprarAsiento(pConnection net.Conn, pCategory string, pZona string, pCantidad int, pBuffer []byte) {
 	fmt.Println("Comprando tickets...")
@@ -166,9 +185,7 @@ func comprarAsiento(pConnection net.Conn, pCategory string, pZona string, pCanti
 			var colum = string(pBuffer[:read4])
 			columNum, _ := strconv.Atoi(colum)
 
-			agregarFactura(idFactura, datosCliente(cedula), datosAsiento(pCategory, pZona, filaNum, columNum), int32(datosAsiento(pCategory, pZona, filaNum, columNum).Costo))
-			cambiarDisponibilidad(pCategory, pZona, filaNum, columNum, -1)
-			idFactura++
+			comprarAsientoEspecifico(pCategory, pZona, filaNum, columNum, cedula)
 		}
 	}
 }
@@ -193,6 +210,10 @@ func filtrarAsiento(pFila int, pColum int, pLista *[]com.Asiento) *com.Asiento {
 	return asiento
 }
 
+/*
+*
+Retorna un puntero al asiento deseado.
+*/
 func datosAsiento(pCategoria string, pZona string, pFila int, pColum int) *com.Asiento {
 	matrixAsientos := obtenerAsientos(pCategoria, pZona)
 	var asientos = mapAsientos(matrixAsientos, func(p com.Asiento) com.Asiento {
@@ -206,6 +227,10 @@ func datosAsiento(pCategoria string, pZona string, pFila int, pColum int) *com.A
 	return asiento
 }
 
+/*
+*
+Obtiene el tamaño de una matrix
+*/
 func getSizeList(pList *[][]com.Asiento) int {
 	var cont = 0
 	for i := range *pList {
@@ -298,7 +323,7 @@ Disponibilidad del asiento:
 */
 
 /*
-Cambia la disponibilidad del asiento segun se requiera
+Cambia la disponibilidad del asiento segun se requiera.
 */
 func cambiarDisponibilidad(pCate string, pZona string, pFila int, pAsiento int, pDispo int8) {
 	switch {
@@ -374,6 +399,61 @@ func categoriaData() {
 
 --------------------------------------------------------------------------------
 */
+
+/*
+*
+Funcion encargada de escribirle mendiante un socket una serie de bytes(string) al cliente.
+*/
+func escribirAlCliente(pCadena string, pConnection net.Conn) {
+	_, err := pConnection.Write([]byte(pCadena))
+	if err != nil {
+		fmt.Println("Error writing:", err.Error())
+	}
+}
+
+func leerAlCliente(pConnection net.Conn, pBuffer []byte) string {
+	msg, err := pConnection.Read(pBuffer)
+	if err != nil {
+		fmt.Println("Error reading:", err.Error())
+		return "Error reading:" + err.Error()
+	}
+
+	if string(pBuffer[:msg]) != "" {
+		return string(pBuffer[:msg])
+	}
+
+	return "Mensaje vacio."
+}
+
+func buscarClientByID(pCedula string) *com.Cliente {
+	var puntero = dClientes[pCedula]
+	return &puntero
+}
+
+func mostrarCliente(pCedula string) string {
+	var cliente = buscarClientByID(pCedula)
+	var cadena = "----- CLIENTE -----\n"
+	cadena += "" + cliente.NombreCompleto + "\n"
+	cadena += "" + cliente.Cedula + "\n"
+	cadena += "" + cliente.Correo + "\n"
+	return cadena
+}
+
+func specificClientTask(pConnection net.Conn, pBuffer []byte) {
+	pConnection.Write([]byte("\nIngrese cedula cliente a consultar\n"))
+	read, _ := pConnection.Read(pBuffer)
+	var cedula = string(pBuffer[:read])
+	fmt.Println("Recibe cedula: " + cedula)
+
+	if isCliente(cedula) {
+		pConnection.Write([]byte(mostrarCliente(cedula)))
+	} else {
+		pConnection.Write([]byte("No existe un cliente asociado a la cedula -> " + cedula))
+		fmt.Println("No es un cliente.")
+	}
+
+}
+
 func cargarDatos() {
 	clientesData()
 	categoriaData()
@@ -381,11 +461,13 @@ func cargarDatos() {
 
 func mostrarClientes() string {
 	fmt.Println("Solicitando al servidor clientes...")
-	var answer string = ""
+	var answer = ""
 	answer += "----Clientes----\n"
 	for _, client := range dClientes {
 		answer += client.NombreCompleto
-		answer += "\n"
+		answer += client.Cedula
+		answer += client.Correo
+		answer += "\n\n"
 	}
 	return answer
 }
@@ -395,18 +477,23 @@ func mostrarFacturas() string {
 	var cadena = ""
 	for factura := range dFacturas {
 		cadena += "|--------------- FACTURA ---------------|\n"
-		cadena += "Id -> " + strconv.Itoa(int(dFacturas[factura].IdFactura))
-		cadena += "         ---ASIENTO---         \n"
-		cadena += "Categoria -> " + dFacturas[factura].Asiento.Categoria + "\n"
-		cadena += "Zona -> " + dFacturas[factura].Asiento.Zona + "\n"
-		cadena += "Fila -> " + strconv.Itoa(int(dFacturas[factura].Asiento.Fila)) + "\n"
-		cadena += "Asiento -> " + strconv.Itoa(int(dFacturas[factura].Asiento.Columna)) + "\n"
-		cadena += "         ---CLIENTE---         \n"
-		cadena += "Nombre -> " + dFacturas[factura].Cliente.NombreCompleto + "\n"
-		cadena += "Cedula -> " + dFacturas[factura].Cliente.Cedula + "\n"
-		cadena += "Email -> " + dFacturas[factura].Cliente.Correo + "\n"
+		cadena += " Id -> " + strconv.Itoa(int(dFacturas[factura].IdFactura))
+		cadena += "\t\t---ASIENTO---\n"
+		cadena += " Categoria -> " + dFacturas[factura].Asiento.Categoria + "\n"
+		cadena += " Zona -> " + dFacturas[factura].Asiento.Zona + "\n"
+		cadena += " Fila -> " + strconv.Itoa(int(dFacturas[factura].Asiento.Fila)) + "\n"
+		cadena += " Asiento -> " + strconv.Itoa(int(dFacturas[factura].Asiento.Columna)) + "\n"
+		cadena += " Precio -> " + strconv.Itoa(dFacturas[factura].Asiento.Costo) + "\n"
+		cadena += "\t\t---CLIENTE---\n"
+		cadena += " Nombre -> " + dFacturas[factura].Cliente.NombreCompleto + "\n"
+		cadena += " Cedula -> " + dFacturas[factura].Cliente.Cedula + "\n"
+		cadena += " Email -> " + dFacturas[factura].Cliente.Correo + "\n"
 		cadena += "|----------------- END -----------------|\n"
 		cadena += "\n"
+	}
+	fmt.Println(cadena)
+	if cadena == "" {
+		return "Sin facturas"
 	}
 	return cadena
 }
@@ -460,8 +547,7 @@ func mostrarInfoPrincipal() string {
 	cadena += "3. Registrarse.\n"
 	cadena += "4. Clientes.\n"
 	cadena += "5. Facturas.\n"
-	cadena += "6. Asientos.\n"
-	cadena += "7. Salir.\n"
+	cadena += "6. Salir.\n"
 	return cadena
 }
 
@@ -489,6 +575,22 @@ func logInTask(pConnection net.Conn, pBuffer []byte) {
 	agregarCliente(cedula, nombre, email)
 }
 
+func getZona(pZonaNumerada string) string {
+	switch pZonaNumerada {
+	case "1":
+		return "a"
+	case "2":
+		return "b"
+	case "3":
+		return "c"
+	}
+	return ""
+}
+
+/*
+*
+Funcion encargada de comunicar acciones entre el servidor y cliente a la hora de comprar un asiento.
+*/
 func buyTask(pConnection net.Conn, pBuffer []byte) {
 	pConnection.Write([]byte(monstrarCategorias() + "\nQue categoria desea comprar?\n"))
 	read, _ := pConnection.Read(pBuffer)
@@ -498,15 +600,7 @@ func buyTask(pConnection net.Conn, pBuffer []byte) {
 	pConnection.Write([]byte(mostrarZonas() + "\nQue zona desea comprar?\n"))
 	read1, _ := pConnection.Read(pBuffer)
 	var zona = string(pBuffer[:read1])
-	var pZona = ""
-	switch zona {
-	case "1":
-		pZona = "a"
-	case "2":
-		pZona = "b"
-	case "3":
-		pZona = "c"
-	}
+	var pZona = getZona(zona)
 	fmt.Println("Recibe zona: " + pZona)
 
 	pConnection.Write([]byte("\nCuantos tickets desea comprar?\n"))
@@ -573,27 +667,29 @@ func taskFlow(pConnection net.Conn, pTask string, pBuffer []byte) {
 	case "1": // compra de asientos
 		buyTask(pConnection, pBuffer)
 	case "2": // buscar cliente (byCedula)
+		specificClientTask(pConnection, pBuffer)
 	case "3": // registrarse (cliente)
 		logInTask(pConnection, pBuffer)
 	case "4": // clientes en sistema
+		//escribirAlCliente(mostrarClientes(), pConnection)
 		pConnection.Write([]byte(mostrarClientes()))
 	case "5": // facturas
 		pConnection.Write([]byte(mostrarFacturas()))
-	case "6":
-		//pConnection.Write([]byte(showAll()))
-	case "7": //salir
+	case "6": // salir
 		fmt.Println("Client Dessconnected!")
 	}
+	//leerAlCliente(pConnection, pBuffer)
 }
 
 func processClient(connection net.Conn) {
 	buffer := make([]byte, 1024)
 	for {
+		//escribirAlCliente(mostrarInfoPrincipal(), connection)
 		connection.Write([]byte(mostrarInfoPrincipal()))
 		mLen, err := connection.Read(buffer)
 		if err != nil {
 			fmt.Println("Error reading:", err.Error())
-			return
+			connection.Write([]byte("Error reading:" + err.Error()))
 		}
 		fmt.Println("Received: ", string(buffer[:mLen]))
 		if string(buffer[:mLen]) != "" {

@@ -16,7 +16,7 @@ loop socket = do
     putStrLn "Mensaje respuesta al servidor:"
     toSend <- getLine
     sendAll socket (C.pack toSend)
-    if C.pack toSend == C.pack "7" then putStrLn "Disconnected!" else loop socket
+    if C.pack toSend == C.pack "6" then putStrLn "Disconnected!" else loop socket
 
 -- from the "network-run" package.
 runTCPClient :: HostName -> ServiceName -> (Socket -> IO a) -> IO a
